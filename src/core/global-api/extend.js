@@ -13,6 +13,7 @@ export function initExtend (Vue: GlobalAPI) {
   Vue.cid = 0
   let cid = 1
   /**
+   * --=--
    * 注意这里的 cid 和 _uid 的区别，
    * 在 new Vue 实例的时候走到 _init 方法时，会给这个实例设置一个递增的 _uid，
    * 即每一个 Vue 或者继承自 Vue 的实例的 _uid 都是不同的，并且从 0 开始递增。
