@@ -30,6 +30,10 @@ export function initExtend (Vue: GlobalAPI) {
     const Super = this
     const SuperId = Super.cid
     const cachedCtors = extendOptions._Ctor || (extendOptions._Ctor = {})
+    /**
+     * --=--
+     * 组件相应的构造函数是缓存在它自身的配置对象上，即 extendOptions._Ctor
+     */
     if (cachedCtors[SuperId]) {
       return cachedCtors[SuperId]
     }

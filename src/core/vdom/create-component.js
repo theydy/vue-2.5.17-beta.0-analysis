@@ -110,10 +110,18 @@ export function createComponent (
   }
 
   const baseCtor = context.$options._base
+  /**
+   * --=--
+   * .$options._base 指向的是 Vue 构造函数
+   */
 
   // plain options object: turn it into a constructor
   if (isObject(Ctor)) {
     Ctor = baseCtor.extend(Ctor)
+    /**
+     * --=--
+     * 生成组件的构造函数
+     */
   }
 
   // if at this stage it's not a constructor or an async component factory,
@@ -184,6 +192,10 @@ export function createComponent (
 
   // install component management hooks onto the placeholder node
   installComponentHooks(data)
+  /**
+   * --=--
+   * 安装组件在 patch 过程中会调用的钩子函数
+   */
 
   // return a placeholder vnode
   const name = Ctor.options.name || tag
@@ -193,6 +205,26 @@ export function createComponent (
     { Ctor, propsData, listeners, tag, children },
     asyncFactory
   )
+  /**
+   * --=--
+   * 这里生成的是组件的占位符 vnode，注意这里 new VNode 传的第三个参数 children 是 undefined。
+   * 因为执行到这里时，我们是在这个组件的父组件的 render 函数中，不会立马递归生成子组件内部的 vnode，
+   * 都是用一个占位符 vnode 来代替。然后在后续父组件的 vnode 完成后，会调用 _update 函数去 patch
+   * 父组件成真实 DOM，这个时候在 patch 函数中有个同名 createComponent 函数会判断 vnode 是否是
+   * 一个组件的 vnode，如果是，会执行子组件的 init hook 函数，也就是在 installComponentHooks
+   * 中注册的钩子函数。在这个函数中会执行 new 子组件实例，然后当然就会进入子组件的 render 和 patch。
+   * 这时候在子组件的 render 函数中才会真正生成子组件内部的 vnode。并且组件内部的 vnode 生成顺序是
+   * 先把组件 children 从上到下顺序生成，然后在执行这个组件本身的 vnode 生成过程。这可以从编译生成出的
+   * render 函数中看出来，如下。对于 createElement 的调用方式是这样的。而且 createElement 函数
+   * children 参数最后需要格式化成 VNode Array 也说明了这一点，先处理出合规的参数，才会继续走 createElement 逻辑。
+   * render 函数：_c 就是对于 createElement 的封装
+   * _c('div', {
+   *   id: 'app'
+   * }, [
+   *   _c('div', {}, 'hello world'),
+   *   _c('p', {}, 'this is a pen')
+   * ])
+   */
 
   // Weex specific: invoke recycle-list optimized @render function for
   // extracting cell-slot template.
