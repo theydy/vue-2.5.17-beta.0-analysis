@@ -70,6 +70,22 @@ export function mergeDataOrFn (
   childVal: any,
   vm?: Component
 ): ?Function {
+  /**
+   * --=--
+   * 对于 data 的合并，无论是否传递 vm 参数（即无论是对于根实例的合并或是组件的合并）
+   * 最后 return 的都是一个函数，而最终的合并结果要在初始化 data 时才会执行这个函数获得。
+   * 之所以这样做是为了让我们能够使用 inject 或 props 的值作为 data 中属性的初始值，
+   * Vue 中 inject, props 的初始化在 data 之前，
+   * 所以可以这样写：
+   * export default {
+   *   props: ['propValue'],
+   *   data () {
+   *     return {
+   *       value: this.propValue
+   *     }
+   *   }
+   * }
+   */
   if (!vm) {
     // in a Vue.extend merge, both should be functions
     if (!childVal) {
@@ -373,6 +389,12 @@ export function mergeOptions (
   child: Object,
   vm?: Component
 ): Object {
+  /**
+   * --=--
+   * mergeOptions 第三个参数 vm，
+   * 可以通过是否传这个参数判断现在处理的是根 Vue 实例，还是组件实例。
+   * 根实例会传 vm 参数，组件实例不会传 vm 参数。
+   */
   if (process.env.NODE_ENV !== 'production') {
     checkComponents(child)
   }
@@ -420,7 +442,7 @@ export function mergeOptions (
    *    childVal 的同名属性会覆盖 parentVal 的同名属性
    * 4. data, provide 合并策略：遍历 parentVal，把 childVal 没有的属性都通过 Vue.prototype.$set 赋值给 childVal。
    *    如果是 childVal 也有的属性，判断这个属性 childVal 和 parentVal 是不是同时为 Array 或 Object，
-   *    如果是则递归调用一次合并策略函数
+   *    如果是则递归调用一次合并策略函数，注意 data 经过选项合并后得到的是一个函数，而不是最后的合并结果。
    * 5. watch 合并策略：parentVal, childVal 中相同的属性合并成一个 Array [parentVal, childVal]
    * 6. 默认合并策略：有 childVal，就用 childVal，否则返回 parentVal
    */
