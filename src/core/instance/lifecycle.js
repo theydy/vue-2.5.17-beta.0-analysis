@@ -26,6 +26,10 @@ export function initLifecycle (vm: Component) {
 
   // locate first non-abstract parent
   let parent = options.parent
+  /**
+   * --=--
+   * parent 是父 vm 实例
+   */
   if (parent && !options.abstract) {
     while (parent.$options.abstract && parent.$parent) {
       parent = parent.$parent
@@ -55,6 +59,11 @@ export function lifecycleMixin (Vue: Class<Component>) {
     const prevActiveInstance = activeInstance
     activeInstance = vm
     vm._vnode = vnode
+    /**
+     * --=--
+     * _vnode 存放的是这个组件的渲染 vnode，注意不要和占位符 vnode 混淆，
+     * prevVnode 存放的是上一次的渲染 vnode，如果不存在的话，说明是第一次 patch 这个组件
+     */
     // Vue.prototype.__patch__ is injected in entry points
     // based on the rendering backend used.
     if (!prevVnode) {
@@ -64,6 +73,10 @@ export function lifecycleMixin (Vue: Class<Component>) {
       // updates
       vm.$el = vm.__patch__(prevVnode, vnode)
     }
+    /**
+     * --=--
+     * patch 完毕后，生成的真实 DOM 节点会存放在 vm.$el 上。
+     */
     activeInstance = prevActiveInstance
     // update __vue__ reference
     if (prevEl) {

@@ -122,6 +122,13 @@ export function createPatchFunction (backend) {
 
   let creatingElmInVPre = 0
 
+  /**
+   * --=--
+   * createElm 方法的作用是根据 vnode 生成真实 DOM 节点，
+   * 生成的 DOM 节点保存在 vnode.elm 上，
+   * vm.$el === vnode.elm
+   * vm.$el === vm._vnode.elm
+   */
   function createElm (
     vnode,
     insertedVnodeQueue,
@@ -141,6 +148,10 @@ export function createPatchFunction (backend) {
     }
 
     vnode.isRootInsert = !nested // for transition enter check
+    /**
+     * --=--
+     * 组件的 vnode 逻辑，这时候这里的 vnode 是组件的占位符 vnode
+     */
     if (createComponent(vnode, insertedVnodeQueue, parentElm, refElm)) {
       return
     }
@@ -213,6 +224,16 @@ export function createPatchFunction (backend) {
       const isReactivated = isDef(vnode.componentInstance) && i.keepAlive
       if (isDef(i = i.hook) && isDef(i = i.init)) {
         i(vnode, false /* hydrating */)
+        /**
+         * --=--
+         * 执行组件的 init 钩子函数 create-component.js/componentVNodeHooks.init
+         * 这一步会生成子组件的 vm 实例，并且执行子组件的 patch 过程。
+         * 完成后，vm.$el 指向真实 DOM 节点。
+         * 而 vnode.componentInstance 指向 vm 实例。
+         * 这里的 vnode 是占位符 vnode。
+         * 子组件 patch 完成后，因为并没有传相应的 parentElm，所以并没有插入到整个 DOM tree 中。
+         * 子组件的 insert 在下面的 insert(parentElm, vnode.elm, refElm) 这一句。
+         */
       }
       // after calling the init hook, if the vnode is a child component
       // it should've created a child instance and mounted it. the child
@@ -220,6 +241,13 @@ export function createPatchFunction (backend) {
       // in that case we can just return the element and be done.
       if (isDef(vnode.componentInstance)) {
         initComponent(vnode, insertedVnodeQueue)
+        /**
+         * --=--
+         * initComponent 中有如下这句代码：
+         * vnode.elm = vnode.componentInstance.$el
+         * 即把组件的真实 DOM 节点存储到占位符 vnode 的 elm 上。
+         * 这样执行 insert 的条件就满足了。
+         */
         insert(parentElm, vnode.elm, refElm)
         if (isTrue(isReactivated)) {
           reactivateComponent(vnode, insertedVnodeQueue, parentElm, refElm)

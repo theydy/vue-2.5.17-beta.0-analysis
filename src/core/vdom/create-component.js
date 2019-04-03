@@ -48,7 +48,17 @@ const componentVNodeHooks = {
         vnode,
         activeInstance
       )
+      /**
+       * --=--
+       * vnode 是当前组件占位符 vnode
+       * activeInstance 是当前的 vm 实例，也就是 vnode 的父组件实例
+       * 这里调用了 createComponentInstanceForVnode 方法生成子组件实例。
+       */
       child.$mount(hydrating ? vnode.elm : undefined, hydrating)
+      /**
+       * --=--
+       * 调用子组件的 $mount 方法
+       */
     }
   },
 
@@ -246,6 +256,12 @@ export function createComponentInstanceForVnode (
     _parentVnode: vnode,
     parent
   }
+  /**
+   * --=--
+   * 子组件实例的 _parentVnode 是子组件的占位符 vnode
+   * 子组件的 parent 是父组件的 vm 实例，关于 patch 过程中用来记录父子组件实例
+   * 的辅助变量 activeInstance 和 prevActiveInstance 都是在 _update 方法中改变。
+   */
   // check inline-template render functions
   const inlineTemplate = vnode.data.inlineTemplate
   if (isDef(inlineTemplate)) {
