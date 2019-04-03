@@ -304,6 +304,12 @@ function normalizeProps (options: Object, vm: ?Component) {
     )
   }
   options.props = res
+  /**
+   * --=--
+   * props 个格式规范化
+   * [value, number] -> { value: { type: null }, number: { type: null } }
+   * { value: Number, number: Number } -> { value: { type: Number }, number: { type: Number } }
+   */
 }
 
 /**
@@ -378,6 +384,10 @@ export function mergeOptions (
   normalizeProps(child, vm)
   normalizeInject(child, vm)
   normalizeDirectives(child)
+  /**
+   * --=--
+   * normalizeProps，normalizeInject，normalizeDirectives 做格式规范化
+   */
   const extendsFrom = child.extends
   if (extendsFrom) {
     parent = mergeOptions(parent, extendsFrom, vm)
@@ -401,6 +411,19 @@ export function mergeOptions (
     const strat = strats[key] || defaultStrat
     options[key] = strat(parent[key], child[key], vm, key)
   }
+  /**
+   * --=--
+   * 合并策略：
+   * 1. 生命周期钩子函数：合并为一个数组 [parentVal, childVal]
+   * 2. 资源 (component, directive, filter) 合并策略：创建一个空对象，原型对象保存 parentVal，对象本身属性存放 childVal
+   * 3. props, methods, inject, computed 合并策略：遍历 parentVal, childVal 的属性合并到一个对象上，
+   *    childVal 的同名属性会覆盖 parentVal 的同名属性
+   * 4. data, provide 合并策略：遍历 parentVal，把 childVal 没有的属性都通过 Vue.prototype.$set 赋值给 childVal。
+   *    如果是 childVal 也有的属性，判断这个属性 childVal 和 parentVal 是不是同时为 Array 或 Object，
+   *    如果是则递归调用一次合并策略函数
+   * 5. watch 合并策略：parentVal, childVal 中相同的属性合并成一个 Array [parentVal, childVal]
+   * 6. 默认合并策略：有 childVal，就用 childVal，否则返回 parentVal
+   */
   return options
 }
 
