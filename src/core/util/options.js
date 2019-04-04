@@ -471,6 +471,7 @@ export function resolveAsset (
    * 1. 默认
    * 2. 驼峰
    * 3. 首字母大写
+   * 4. 在原型上查找，by the way，asset 的合并策略就是 parentVal 存到原型对象上，childVal 存在对象本身属性。
    */
   if (hasOwn(assets, id)) return assets[id]
   const camelizedId = camelize(id)
