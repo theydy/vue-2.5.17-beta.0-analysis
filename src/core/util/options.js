@@ -466,6 +466,12 @@ export function resolveAsset (
   }
   const assets = options[type]
   // check local registration variations first
+  /**
+   * --=--
+   * 1. 默认
+   * 2. 驼峰
+   * 3. 首字母大写
+   */
   if (hasOwn(assets, id)) return assets[id]
   const camelizedId = camelize(id)
   if (hasOwn(assets, camelizedId)) return assets[camelizedId]
