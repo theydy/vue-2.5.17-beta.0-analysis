@@ -81,6 +81,18 @@ export function createPatchFunction (backend) {
       }
     }
   }
+  /**
+   * --=--
+   * hooks 的定义在：const hooks = ['create', 'activate', 'update', 'remove', 'destroy']，
+   * 最后得到的 cbs 内容如下：
+   * cbs = {
+   *   activate: [ _enter ],
+   *   create: [ updateAttrs, updateClass, updateDOMListeners, updateDOMProps, updateStyle, _enter, create, updateDirectives ],
+   *   destroy: [ destroy, unbindDirectives ],
+   *   remove: [ remove ],
+   *   update: [ updateAttrs, updateClass, updateDOMListeners, updateDOMProps, updateStyle, update, updateDirectives ]
+   * }
+   */
 
   function emptyNodeAt (elm) {
     return new VNode(nodeOps.tagName(elm).toLowerCase(), {}, [], undefined, elm)
@@ -338,6 +350,13 @@ export function createPatchFunction (backend) {
       if (isDef(i.create)) i.create(emptyNode, vnode)
       if (isDef(i.insert)) insertedVnodeQueue.push(vnode)
     }
+    /**
+     * --=--
+     * invokeCreateHooks 对于一般的 vnode 来说就是用于生成这个元素上 class, attrs, listener 等属性监听器所要执行的 callbacks 函数。
+     * 因为一般的 vnode 没有 data.hook 这个钩子函数的属性，所以后面的 isDef(i) 逻辑都不会走到。
+     * 而对于组件的占位符 vnode，则两部分逻辑都会走到，第一部分生成这个占位符 vnode 上有可能存在的监听事件等等，
+     * 然后用 insertedVnodeQueue 记录下组件 patch 完成的先后顺序，vnode.data.hook.create 倒是没看见哪里有用到。
+     */
   }
 
   // set scope id attribute for scoped CSS.
@@ -595,6 +614,14 @@ export function createPatchFunction (backend) {
       for (let i = 0; i < queue.length; ++i) {
         queue[i].data.hook.insert(queue[i])
       }
+      /**
+       * --=--
+       * 这里的 queue 就是 insertedVnodeQueue，
+       * 这个队列中存储了在这次 patch 中所有的组件的先后 patch 完成顺序。
+       * 最后也是按照这个顺序调用 mounted 钩子函数，
+       * mounted 钩子函数总的调用顺序是：先子后父。
+       * 因为 patch 过程中都是优先递归完成子组件的 patch 过程。
+       */
     }
   }
 

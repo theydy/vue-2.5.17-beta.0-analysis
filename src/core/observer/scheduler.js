@@ -99,6 +99,10 @@ function callUpdatedHooks (queue) {
     const watcher = queue[i]
     const vm = watcher.vm
     if (vm._watcher === watcher && vm._isMounted) {
+      /**
+       * --=--
+       * 如果是一个渲染 watcher 并且已经 mounted 过了，调用 updated 钩子函数
+       */
       callHook(vm, 'updated')
     }
   }

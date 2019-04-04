@@ -79,6 +79,11 @@ const componentVNodeHooks = {
     if (!componentInstance._isMounted) {
       componentInstance._isMounted = true
       callHook(componentInstance, 'mounted')
+      /**
+       * --=--
+       * 组件调用 mounted 钩子函数
+       * patch 函数的最后在 invokeInsertHook 函数中调用了 insert 钩子函数
+       */
     }
     if (vnode.data.keepAlive) {
       if (context._isMounted) {

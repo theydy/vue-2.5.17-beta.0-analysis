@@ -129,6 +129,10 @@ export function lifecycleMixin (Vue: Class<Component>) {
     vm._isDestroyed = true
     // invoke destroy hooks on current rendered tree
     vm.__patch__(vm._vnode, null)
+    /**
+     * --=--
+     * 递归销毁子组件 __patch__ 这个方法第二个参数 newVnode 传空。
+     */
     // fire destroyed hook
     callHook(vm, 'destroyed')
     // turn off all instance listeners.
@@ -214,6 +218,11 @@ export function mountComponent (
   if (vm.$vnode == null) {
     vm._isMounted = true
     callHook(vm, 'mounted')
+    /**
+     * --=--
+     * 根 Vue 实例调用 mounted 钩子函数。
+     * 
+     */
   }
   return vm
 }
@@ -326,6 +335,10 @@ export function deactivateChildComponent (vm: Component, direct?: boolean) {
 }
 
 export function callHook (vm: Component, hook: string) {
+  /**
+   * --=--
+   * 执行生命周期函数
+   */
   // #7573 disable dep collection when invoking lifecycle hooks
   pushTarget()
   const handlers = vm.$options[hook]

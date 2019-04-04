@@ -53,10 +53,18 @@ export function initMixin (Vue: Class<Component>) {
     initEvents(vm)
     initRender(vm)
     callHook(vm, 'beforeCreate')
+    /**
+     * --=--
+     * beforeCreate 中拿不到数据
+     */
     initInjections(vm) // resolve injections before data/props
     initState(vm)
     initProvide(vm) // resolve provide after data/props
     callHook(vm, 'created')
+    /**
+     * --=--
+     * created 中 props, methods, data, computed, watch 初始化完成，可以拿到数据
+     */
 
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
