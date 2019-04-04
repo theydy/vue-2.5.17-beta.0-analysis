@@ -79,6 +79,10 @@ export function initExtend (Vue: GlobalAPI) {
     if (name) {
       Sub.options.components[name] = Sub
     }
+    /**
+     * --=--
+     * 如果有写组件的 name 属性，会给这个组件的构造函数 Sub.options.components 字段中添加自身。
+     */
 
     // keep a reference to the super options at extension time.
     // later at instantiation we can check if Super's options have
