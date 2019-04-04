@@ -149,6 +149,11 @@ export function createComponent (
   }
 
   // async component
+  /**
+   * --=--
+   * 异步组件都是写成一个函数的形式比如： let comA = () => import('./comA');
+   * 但是因为这个函数并不是一个 Vue 构造函数，所以没有 cid 属性。
+   */
   let asyncFactory
   if (isUndef(Ctor.cid)) {
     asyncFactory = Ctor
@@ -157,6 +162,15 @@ export function createComponent (
       // return a placeholder node for async component, which is rendered
       // as a comment node but preserves all the raw information for the node.
       // the information will be used for async server-rendering and hydration.
+      /**
+       * --=--
+       * Ctor 是异步组件的构造函数，第一次调用 resolveAsyncComponent 除非使用了高级异步组件 0 delay 会返回一个 loading 组件，
+       * 否则 Ctor 会是 undefined，那么就生成一个暂时的占位注释节点。
+       * 在 Ctor 加载完成后，asyncFactory.resolved 会缓存生成的构造函数，
+       * 然后调用 vm.$forceUpdate() 强制重新执行渲染 watcher 的 update 方法更新视图，
+       * 在这次更新中会再执行一次 resolveAsyncComponent，
+       * 但是这次可以直接取到缓存的构造函数，然后就是和普通组件一样的流程了。
+       */
       return createAsyncPlaceholder(
         asyncFactory,
         data,

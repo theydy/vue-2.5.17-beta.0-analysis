@@ -42,6 +42,15 @@ export function resolveAsyncComponent (
   baseCtor: Class<Component>,
   context: Component
 ): Class<Component> | void {
+  /**
+   * --=--
+   * resolveAsyncComponent 处理了 3 种异步组件的情况
+   * 1. 普通函数异步组件
+   * 2. Promise 异步组件
+   * 3. 高级异步组件
+   * 异步组件实现的本质是 2 次渲染，除了 0 delay 的高级异步组件第一次直接渲染成 loading 组件外，
+   * 其它都是第一次渲染生成一个注释节点，当异步获取组件成功后，再通过 forceRender 强制重新渲染
+   */
   if (isTrue(factory.error) && isDef(factory.errorComp)) {
     return factory.errorComp
   }
@@ -89,14 +98,26 @@ export function resolveAsyncComponent (
     })
 
     const res = factory(resolve, reject)
+    /**
+     * --=--
+     * 普通函数异步组件没有返回值 res。
+     */
 
     if (isObject(res)) {
       if (typeof res.then === 'function') {
         // () => Promise
+        /**
+         * --=--
+         * Promise 异步组件
+         */
         if (isUndef(factory.resolved)) {
           res.then(resolve, reject)
         }
       } else if (isDef(res.component) && typeof res.component.then === 'function') {
+        /**
+         * --=--
+         * 高级异步组件
+         */
         res.component.then(resolve, reject)
 
         if (isDef(res.error)) {
