@@ -147,6 +147,10 @@ export function defineReactive (
   customSetter?: ?Function,
   shallow?: boolean
 ) {
+  /**
+   * --=--
+   * defineReactive 函数的核心是将数据对象的数据属性转换为访问器属性
+   */
   const dep = new Dep()
 
   const property = Object.getOwnPropertyDescriptor(obj, key)
@@ -181,11 +185,40 @@ export function defineReactive (
           childOb.dep.depend()
           if (Array.isArray(value)) {
             dependArray(value)
+            /**
+             * --=--
+             * dependArray 实际上是遍历了 Array 做了依赖收集的操作，
+             * 并且如果 Array 的属性还是 Array，那么需要递归调用 dependArray，
+             * 之所以会这样，是因为 Object.defineProperty 只针对 Object 才会设置 getter, setter。
+             * 而在 template 中使用了数组的话，除非这个数组是一个 Object 的直接的属性，才会正常收集依赖。
+             * 而 array[0] 这样操作只触发了 array 的 getter，而没有触发 array[0] 这一层的 getter
+             * 这会造成当修改 array[0] 触发更新时，并没有对应的 watcher 更新。
+             * 所以遍历 Array + 递归调用 dependArray 手动收集依赖，
+             * 当然这里会造成假如 template 中没有用到 array[1]，但是修改了 array[1] 后会重新渲染视图，
+             * 因为 dependArray 使得 array 下的所有属性都收集了当前的 watcher 。
+             * Object 不用递归是因为 data.a.b 这样访问，data, data.a, data.a.b 每一层的 getter 都会被调用到。
+             * by the way，在 template 中直接写一个 obj，那么实际上 render 是会调用 JSON.stringify(obj) 的。
+             * 而 JSON.stringify 就会访问 obj 下的所有属性触发 getter。
+             */
           }
         }
         /**
          * --=--
-         * 这一段逻辑是为了在 Vue.$set 正确的触发更新。
+         * 这一段逻辑是为了在 Vue.$set 或 Vue.$delete 正确的触发更新。
+         * 实际上对于一个对象的响应式属性，收集的依赖有两份，
+         * 一份是 defineReactive 开头创建的 dep，
+         * 还有一份就是 childOb.dep，这是在 new Observer 中创建的，
+         * childOb.dep === val.__ob__.dep。
+         * 这两份依赖触发更新的时机不同。
+         * dep 触发更新的时机就是 setter 中，
+         * 而 childOb.dep 触发更新的时机在 Vue.$set 方法中，
+         * 因为 Vue 使用 Object.defineProperty 没有办法监听
+         * 到给对象添加新属性的情况，但是添加新属性肯定是 setter 的一种，
+         * 所以这时候需要手动执行 dep 的 notify，
+         * 这种情况下就可以通过 obj.__ob__.dep 来取到这个 obj 相同的一份依赖了。
+         * 而且对于数组来说只有 obj.__ob__.dep 这一份 dep，
+         * 想要修改数组并且派发更新也只能通过 Vue.$set 来做，Vue.$set 的原理就是调用了数组的变异方法，
+         * 而我们改写了数组的变异方法，在变异方法中派发了更新。
          */
       }
       return value

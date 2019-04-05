@@ -47,6 +47,13 @@ function flushSchedulerQueue () {
   //    user watchers are created before the render watcher)
   // 3. If a component is destroyed during a parent component's watcher run,
   //    its watchers can be skipped.
+  /**
+   * --=--
+   * queue 根据 watcher 的 id 重小到大排列。
+   * 1. 组件的更新由父到子，父组件先于子组件创建，所以父组件的 watcher id 也比子组件的 watcher id 小
+   * 2. 用户的自定义 watcher 要优先于 render watcher 执行，用户自定义 watcher 是先于 render watcher 之前创建的
+   * 3. 如果一个组件在父组件的 watcher 执行期间被销毁，那么这个组件对应的 watcher 执行都可以被跳过。
+   */
   queue.sort((a, b) => a.id - b.id)
 
   // do not cache length because more watchers might be pushed
@@ -55,12 +62,26 @@ function flushSchedulerQueue () {
     watcher = queue[index]
     if (watcher.before) {
       watcher.before()
+      /**
+       * --=--
+       * 如果组件 _isMounted，则调用 beforeUpdate 钩子函数
+       */
     }
     id = watcher.id
     has[id] = null
     watcher.run()
+    /**
+     * --=--
+     * 执行 watcher 的更新，run 中调用了 getAndInvoke 方法，
+     * getAndInvoke 方法中会执行 watcher 的 getter，对于 render watcher 来说，
+     * 就是再次执行 updateComponent 函数了，也就是 render patch 的过程，完成视图的更新。
+     */
     // in dev build, check and stop circular updates.
     if (process.env.NODE_ENV !== 'production' && has[id] != null) {
+      /**
+       * --=--
+       * 处理循环更新 bug。
+       */
       circular[id] = (circular[id] || 0) + 1
       if (circular[id] > MAX_UPDATE_COUNT) {
         warn(
@@ -134,12 +155,21 @@ function callActivatedHooks (queue) {
 export function queueWatcher (watcher: Watcher) {
   const id = watcher.id
   if (has[id] == null) {
+    /**
+     * --=--
+     * queue 添加更新的 watcher 时，会做一个去重的优化。
+     */
     has[id] = true
     if (!flushing) {
       queue.push(watcher)
     } else {
       // if already flushing, splice the watcher based on its id
       // if already past its id, it will be run next immediately.
+      /**
+       * --=--
+       * 在 nextTick 执行 watcher 更新的过程中，如果 watcher 的回调函数又触发了
+       * queueWatcher，就会走到这部分逻辑中。
+       */
       let i = queue.length - 1
       while (i > index && queue[i].id > watcher.id) {
         i--
@@ -148,6 +178,13 @@ export function queueWatcher (watcher: Watcher) {
     }
     // queue the flush
     if (!waiting) {
+      /**
+       * --=--
+       * 在一个 tick 中第一次走进 queueWatcher 时，会走这块逻辑。
+       * 在 nextTick 中处理 flushSchedulerQueue 这个函数。
+       * nextTick 的实现在 2.6 版本中已经全部用 Promise 实现了，
+       * 所以这里可以认为是在微任务队列中添加一个 flushSchedulerQueue
+       */
       waiting = true
       nextTick(flushSchedulerQueue)
     }

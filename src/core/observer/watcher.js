@@ -208,6 +208,11 @@ export default class Watcher {
       this.run()
     } else {
       queueWatcher(this)
+      /**
+       * --=--
+       * 派发更新不会立即更新，而是将更新的 watcher 放入一个 queue 中，
+       * 在 nexttick 中一起更新。
+       */
     }
   }
 

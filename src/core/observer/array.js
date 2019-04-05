@@ -22,6 +22,17 @@ const methodsToPatch = [
  * Intercept mutating methods and emit events
  */
 methodsToPatch.forEach(function (method) {
+  /**
+   * --=--
+   * Object.defineProperty 只能针对对象下的属性做 getter, setter 的设置，
+   * 也就是说对于 Array，直接访问 array[0] 或者 array[0] = xx 这样修改数组的值，
+   * 都不会触发 getter 和 setter，毕竟也没有对于 Array 设置 getter, setter。
+   * getter, setter 是对 Object 设置的。
+   * 那么为了数组也能正确的执行依赖收集和派发更新的操作，
+   * 一是在 Object 的 getter 中判断如果值是一个数组，
+   * 会遍历数组下的属性全都收集一次当前的 watcher，如果值中还嵌套了数组就递归调用一次。
+   * 二就是修改数组的变异方法，在变异方法中派发更新。
+   */
   // cache original method
   const original = arrayProto[method]
   def(arrayMethods, method, function mutator (...args) {
@@ -38,8 +49,17 @@ methodsToPatch.forEach(function (method) {
         break
     }
     if (inserted) ob.observeArray(inserted)
+    /**
+     * --=--
+     * 数组中添加了新属性，新值可能是一个对象或数组，所以要做一次观测。
+     * 接下来派发更新，updateComponent 执行过程中又做一次依赖收集。
+     */
     // notify change
     ob.dep.notify()
+    /**
+     * --=--
+     * 派发更新
+     */
     return result
   })
 })
