@@ -248,10 +248,10 @@ export function createComponent (
    * children 参数最后需要格式化成 VNode Array 也说明了这一点，先处理出合规的参数，才会继续走 createElement 逻辑。
    * render 函数：_c 就是对于 createElement 的封装
    * _c('div', {
-   *   id: 'app'
+   *   attrs: { id: 'app' }
    * }, [
-   *   _c('div', {}, 'hello world'),
-   *   _c('p', {}, 'this is a pen')
+   *   _c('div', 'hello world'),
+   *   _c('p', 'this is a pen')
    * ])
    */
 
