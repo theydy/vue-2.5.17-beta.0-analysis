@@ -122,6 +122,10 @@ function initData (vm: Component) {
       vm
     )
   }
+  /**
+   * --=--
+   * data 合并策略最后返回的是一个函数，然后在 initData 中通过调用这个函数获得真正的数据。
+   */
   // proxy data on instance
   const keys = Object.keys(data)
   const props = vm.$options.props
@@ -147,8 +151,16 @@ function initData (vm: Component) {
       proxy(vm, `_data`, key)
     }
   }
+  /**
+   * --=--
+   * data 中属性命名和 props, methods 比较是否有重复的。
+   */
   // observe data
   observe(data, true /* asRootData */)
+  /**
+   * --=--
+   * 观测 data 数据。
+   */
 }
 
 export function getData (data: Function, vm: Component): any {

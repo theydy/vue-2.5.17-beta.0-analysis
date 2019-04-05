@@ -119,11 +119,20 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     (Array.isArray(value) || isPlainObject(value)) &&
     Object.isExtensible(value) &&
     !value._isVue
+    /**
+     * --=--
+     * Vue 实例 ._isVue 为 true。
+     */
   ) {
     ob = new Observer(value)
   }
   if (asRootData && ob) {
     ob.vmCount++
+    /**
+     * --=--
+     * 对于 Vue 实例 data 的 ob.vmCount = 1，而对于 data 属性的递归观测的 ob.vmCount = 0，
+     * 就是说 ob.vmCount == 1 可以判断出这个 __ob__ 是在 vm.$options.data 上的属性。
+     */
   }
   return ob
 }
@@ -153,6 +162,10 @@ export function defineReactive (
   }
 
   let childOb = !shallow && observe(val)
+  /**
+   * --=--
+   * 如果值 val 还是一个对象或数组，那么会递归观测得到 childOb = val.__ob__
+   */
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
@@ -160,12 +173,20 @@ export function defineReactive (
       const value = getter ? getter.call(obj) : val
       if (Dep.target) {
         dep.depend()
+        /**
+         * --=--
+         * 收集依赖
+         */
         if (childOb) {
           childOb.dep.depend()
           if (Array.isArray(value)) {
             dependArray(value)
           }
         }
+        /**
+         * --=--
+         * 这一段逻辑是为了在 Vue.$set 正确的触发更新。
+         */
       }
       return value
     },
@@ -185,7 +206,15 @@ export function defineReactive (
         val = newVal
       }
       childOb = !shallow && observe(newVal)
+      /**
+       * --=--
+       * newVal 可能是一个对象或数组，所以要观测 newVal
+       */
       dep.notify()
+      /**
+       * --=--
+       * 派发更新
+       */
     }
   })
 }
