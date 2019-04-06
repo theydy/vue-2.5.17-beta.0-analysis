@@ -55,6 +55,11 @@ if (typeof setImmediate !== 'undefined' && isNative(setImmediate)) {
     setTimeout(flushCallbacks, 0)
   }
 }
+/**
+ * --=--
+ * 宏任务的实现方式依次降级
+ * setImmediate --> MessageChannel --> setTimeout
+ */
 
 // Determine microtask defer implementation.
 /* istanbul ignore next, $flow-disable-line */
@@ -73,6 +78,11 @@ if (typeof Promise !== 'undefined' && isNative(Promise)) {
   // fallback to macro
   microTimerFunc = macroTimerFunc
 }
+/**
+ * --=--
+ * 优先使用微任务 Promise.then，如果环境不支持 Promise，降级为宏任务实现。
+ * 最新版 2.6 已经改为全用 Promise 实现了。
+ */
 
 /**
  * Wrap a function so that if any code inside triggers state change,
@@ -88,6 +98,17 @@ export function withMacroTask (fn: Function): Function {
 }
 
 export function nextTick (cb?: Function, ctx?: Object) {
+  /**
+   * --=--
+   * nextTick 函数的流程是：
+   * 将每个 cb 包装成一个使用 try-catch 执行的匿名函数，push 进全局的 callbacks 队列中，
+   * 通过 pending 判断在一次渲染过程中执行一次 microTimerFunc，
+   * 最后就是通过 Promise.then 中执行 flushCallbacks 函数，
+   * flushCallbacks 中遍历 callbacks 执行 cb。
+   * 数据改变后触发 render watcher 的 update，也是通过 queueWatcher 函数加入一个队列中，
+   * 然后调用 nextTick(flushSchedulerQueue) 来处理的，
+   * 所以 watcher 的更新也是异步的。
+   */
   let _resolve
   callbacks.push(() => {
     if (cb) {
