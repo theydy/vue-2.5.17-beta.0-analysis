@@ -102,7 +102,7 @@ export function nextTick (cb?: Function, ctx?: Object) {
    * --=--
    * nextTick 函数的流程是：
    * 将每个 cb 包装成一个使用 try-catch 执行的匿名函数，push 进全局的 callbacks 队列中，
-   * 通过 pending 判断在一次渲染过程中执行一次 microTimerFunc，
+   * 通过 pending 判断在一次 event loop 中执行一次 microTimerFunc，
    * 最后就是通过 Promise.then 中执行 flushCallbacks 函数，
    * flushCallbacks 中遍历 callbacks 执行 cb。
    * 数据改变后触发 render watcher 的 update，也是通过 queueWatcher 函数加入一个队列中，

@@ -180,7 +180,7 @@ export function queueWatcher (watcher: Watcher) {
     if (!waiting) {
       /**
        * --=--
-       * 在一个 tick 中第一次走进 queueWatcher 时，会走这块逻辑。
+       * 在一个 event loop 中第一次走进 queueWatcher 时，会走这块逻辑。
        * 在 nextTick 中处理 flushSchedulerQueue 这个函数。
        * nextTick 的实现在 2.6 版本中已经全部用 Promise 实现了，
        * 所以这里可以认为是在微任务队列中添加一个 flushSchedulerQueue
