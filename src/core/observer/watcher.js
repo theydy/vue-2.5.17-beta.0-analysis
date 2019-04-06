@@ -203,6 +203,13 @@ export default class Watcher {
         this.getAndInvoke(() => {
           this.dep.notify()
         })
+        /**
+         * --=--
+         * computed 的 update 过程，getAndInvoke 会重新取一次 computed 的值，接着判断新旧值是否相等，如果不相等，则执行 () => { this.dep.notify() } 这个回调函数，派发更新，
+         * 所以 computed 的 update 过程起到了这个 computed setter 函数的作用。
+         * 而且计算属性是立即重新求值的，不是异步更新。
+         * 当然订阅计算属性的 watcher 还是异步更新的。
+         */
       }
     } else if (this.sync) {
       this.run()

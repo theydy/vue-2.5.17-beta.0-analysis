@@ -187,6 +187,10 @@ function initComputed (vm: Component, computed: Object) {
   for (const key in computed) {
     const userDef = computed[key]
     const getter = typeof userDef === 'function' ? userDef : userDef.get
+    /**
+     * --=--
+     * computed 可以写成一个函数或是一个对象 { get () {} }
+     */
     if (process.env.NODE_ENV !== 'production' && getter == null) {
       warn(
         `Getter is missing for computed property "${key}".`,
@@ -207,8 +211,28 @@ function initComputed (vm: Component, computed: Object) {
     // component-defined computed properties are already defined on the
     // component prototype. We only need to define computed properties defined
     // at instantiation here.
+    /**
+     * --=--
+     * 组件定义的计算属性已经定义在组件的原型对象上了，所以这里只需要定义在实例化时定义的计算属性。
+     * 在生成组件构造函数 Vue.extend 中有一句：
+     * if (Sub.options.computed) {
+     *   initComputed(Sub)
+     * }
+     * function initComputed (Comp) {
+     *   const computed = Comp.options.computed
+     *   for (const key in computed) {
+     *     defineComputed(Comp.prototype, key, computed[key])
+     *   }
+     * }
+     * 可以发现确实组件的计算属性早就定义在组件的原型对象上了，之所以这样做，
+     * 是为了避免每次 new 一个组件实例就重复做一次计算属性的定义，对于 props 同样是这样做的。
+     */
     if (!(key in vm)) {
       defineComputed(vm, key, userDef)
+      /**
+       * --=--
+       * 所以我现在不懂什么情况下会走进这个分支了 =-=
+       */
     } else if (process.env.NODE_ENV !== 'production') {
       if (key in vm.$data) {
         warn(`The computed property "${key}" is already defined in data.`, vm)
@@ -258,6 +282,17 @@ function createComputedGetter (key) {
     if (watcher) {
       watcher.depend()
       return watcher.evaluate()
+      /**
+       * --=--
+       * computed 的 getter 函数做的第一件事就是收集依赖，
+       * computed watcher 构造函数在 watcher 内会创建一个 dep 对象，
+       * watcher.depend 这个方法也是专门用于 computed watcher 使用的，
+       * 用于让 computed watcher 的 dep 收集到当前计算中的 watcher。
+       * 第二件事是返回 computed 正确的计算值。
+       * watcher.evaluate 这个方法也是 computed watcher 的专用方法，
+       * 作用是通过 watcher.dirty 评估是否需要重新计算 computed 值，如果需要就执行 computed
+       * 的计算并返回新值，否则返回旧值，computed 第一次求值就是在 getter 被访问后执行的。
+       */
     }
   }
 }
