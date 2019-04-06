@@ -267,11 +267,21 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
     target.length = Math.max(target.length, key)
     target.splice(key, 1, val)
     return val
+    /**
+     * --=--
+     * 对于正常的数组来说，必定是走进这里调用 splice 变异方法来处理的。
+     * 除非 key 不是一个非负整数，
+     * 作为一个非法的 key，会作为一个数组的自定义属性来处理，走和 Object 新增属性相同的逻辑。
+     */
   }
   if (key in target && !(key in Object.prototype)) {
     target[key] = val
     return val
   }
+  /**
+   * --=--
+   * 以下的逻辑正常来说只针对新增的 Object 属性。
+   */
   const ob = (target: any).__ob__
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== 'production' && warn(
@@ -283,9 +293,18 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
   if (!ob) {
     target[key] = val
     return val
+    /**
+     * --=--
+     * 如果不是一个响应式的对象，那么直接赋值返回就好。
+     */
   }
   defineReactive(ob.value, key, val)
   ob.dep.notify()
+  /**
+   * --=--
+   * 设置响应式对象，
+   * 派发更新
+   */
   return val
 }
 
