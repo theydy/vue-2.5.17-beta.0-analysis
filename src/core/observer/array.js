@@ -32,6 +32,11 @@ methodsToPatch.forEach(function (method) {
    * 一是在 Object 的 getter 中判断如果值是一个数组，
    * 会遍历数组下的属性全都收集一次当前的 watcher，如果值中还嵌套了数组就递归调用一次。
    * 二就是修改数组的变异方法，在变异方法中派发更新。
+   * 
+   * 强行用 Object.defineProperty(array, 1, {}) 实验了下，倒是可以设置。
+   * 而且还能用下标触发 getter, setter，惊了，不过这样做确实不是一个正常的下标属性。
+   * 用 for-in 循环不出来，for-of 反而可以循环出来，神奇。
+   * 原本 for-in 是要循环出数组的自定义属性的，for-of 不循环，怎么还反过来了，绝了。
    */
   // cache original method
   const original = arrayProto[method]
