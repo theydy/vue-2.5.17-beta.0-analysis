@@ -234,6 +234,13 @@ export function updateChildComponent (
   parentVnode: MountedComponentVNode,
   renderChildren: ?Array<VNode>
 ) {
+  /**
+   * --=--
+   * updateChildComponent 函数的作用是更新一个组件的 props, listeners,
+   * vm.$attrs, vm.$listeners。
+   * 父组件给子组件传一个 props 值，父组件中这个绑定的值改变后，
+   * 子组件的 props 绑定值也会变的原理就在这里。
+   */
   if (process.env.NODE_ENV !== 'production') {
     isUpdatingChildComponent = true
   }

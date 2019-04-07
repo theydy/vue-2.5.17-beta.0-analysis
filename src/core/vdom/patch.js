@@ -585,7 +585,16 @@ export function createPatchFunction (backend) {
       /**
        * --=--
        * 会执行这里的逻辑说明是个组件占位符 vnode，
-       * 举个例子：一个组件的 template 最外层又套了一个组件标签就会走到这里。
+       * updateChildren 中有可能再次调用 patchVnode，
+       * 这时候有可能传的就是一个子组件占位符 vnode。
+       * prepatch 钩子函数的作用是调用 updateChildComponent 方法，
+       * 而 updateChildComponent 方法最后调用了 vm.$forceUpdate() 去更新子组件
+       * 总结一下，在执行一个组件的 patchVnode 过程中，如果碰到这个组件的子组件，
+       * 就会执行这个子组件的 prepatch 钩子，prepatch 钩子执行 updateChildComponent 方法，
+       * updateChildComponent 方法中更新子组件的 props, $attrs, listener 等值。
+       * 因为 props 也是响应式的，所以会触发子组件的 setter 中的派发更新，
+       * 接着就开始执行子组件的 patch 过程。即使子组件没有定义 props 值，
+       * 最后也会调用 vm.$forceUpdate() 强制更新。
        */
     }
 
