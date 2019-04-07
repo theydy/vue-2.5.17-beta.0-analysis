@@ -326,6 +326,12 @@ function initMethods (vm: Component, methods: Object) {
 }
 
 function initWatch (vm: Component, watch: Object) {
+  /**
+   * --=--
+   * initWatch 做的事情就是遍历 watch 下的属性，执行 createWatcher，
+   * 因为 watch 同一个属性可以执行多个处理函数，所以 handle 可以是一个数组，
+   * 那么这时就多了一层遍历。
+   */
   for (const key in watch) {
     const handler = watch[key]
     if (Array.isArray(handler)) {
@@ -347,9 +353,23 @@ function createWatcher (
   if (isPlainObject(handler)) {
     options = handler
     handler = handler.handler
+    /**
+     * --=--
+     * 对象写法：
+     * {
+     *   handler () {},
+     *   sync,
+     *   deep,
+     *   immediate
+     * }
+     */
   }
   if (typeof handler === 'string') {
     handler = vm[handler]
+    /**
+     * --=--
+     * 也可以是一个字符串，这个字符串是定义在 methods 里的函数名
+     */
   }
   return vm.$watch(expOrFn, handler, options)
 }
@@ -387,11 +407,31 @@ export function stateMixin (Vue: Class<Component>) {
   ): Function {
     const vm: Component = this
     if (isPlainObject(cb)) {
+      /**
+       * --=--
+       * 因为 $watch 这个接口对外是开放的，所以 cb 可能并不符合格式，
+       * 这里又做了一次 createWatcher，
+       * 不过从这里可以发现，当我们使用 $watch 这个接口定义 user watcher 时，
+       * 支持的写法比起 options.watch 的方式少了很多，
+       * option.watch 支持的格式有：函数，数组，对象，字符串。
+       * $watch 支持的格式有：函数，对象。
+       * 不支持数组的写法是因为 $watch 最后会返回销毁这个 watcher 的函数，
+       * 不过为啥不支持字符串涅
+       * if (typeof cb === 'string' || isPlainObject(cb)) {
+       *   return createWatcher(vm, expOrFn, cb, options)
+       * }
+       */
       return createWatcher(vm, expOrFn, cb, options)
     }
     options = options || {}
     options.user = true
     const watcher = new Watcher(vm, expOrFn, cb, options)
+    /**
+     * --=--
+     * 用 $watch 不能监听不是响应式的属性。
+     * 因为 $watch 原理还是使用 Watchr 类，当访问对应属性时，
+     * 属性的 dep 收集依赖，更新属性时，派发更新。
+     */
     if (options.immediate) {
       cb.call(vm, watcher.value)
     }

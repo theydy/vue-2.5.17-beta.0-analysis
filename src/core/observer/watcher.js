@@ -79,6 +79,13 @@ export default class Watcher {
     if (typeof expOrFn === 'function') {
       this.getter = expOrFn
     } else {
+      /**
+       * --=--
+       * 一般来说 user watcher 才会进入这个分支逻辑。
+       * $watch('obj.a', function () {})。
+       * 监听 obj.a 这个属性。
+       * 那么会执行 parsePath('obj.a') 去找对应的属性，触发 getter。
+       */
       this.getter = parsePath(expOrFn)
       if (!this.getter) {
         this.getter = function () {}
@@ -118,6 +125,11 @@ export default class Watcher {
       // dependencies for deep watching
       if (this.deep) {
         traverse(value)
+        /**
+         * --=--
+         * 深度监听时，递归遍历一遍 value 下的属性，
+         * 触发 getter。
+         */
       }
       popTarget()
       this.cleanupDeps()
