@@ -551,6 +551,10 @@ export function createPatchFunction (backend) {
     }
 
     const elm = vnode.elm = oldVnode.elm
+    /**
+     * --=--
+     * 先拿到原来的 DOM 节点
+     */
 
     if (isTrue(oldVnode.isAsyncPlaceholder)) {
       if (isDef(vnode.asyncFactory.resolved)) {
@@ -578,30 +582,69 @@ export function createPatchFunction (backend) {
     const data = vnode.data
     if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
       i(oldVnode, vnode)
+      /**
+       * --=--
+       * 会执行这里的逻辑说明是个组件占位符 vnode，
+       * 举个例子：一个组件的 template 最外层又套了一个组件标签就会走到这里。
+       */
     }
 
     const oldCh = oldVnode.children
     const ch = vnode.children
+    /**
+     * --=--
+     * 拿到 vnode 的 children，
+     * 如果 children 不为空的话，说明是一个普通的 vnode，
+     * 组件占位符 vnode 是没有 children 的。
+     */
     if (isDef(data) && isPatchable(vnode)) {
       for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
       if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
     }
     if (isUndef(vnode.text)) {
       if (isDef(oldCh) && isDef(ch)) {
+        /**
+         * --=--
+         * 新旧节点都有 children，执行 updateChildren
+         */
         if (oldCh !== ch) updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly)
       } else if (isDef(ch)) {
+        /**
+         * --=--
+         * 新节点有 children，老节点没有 children，
+         * 只需要把老节点可能存在的文本置空，然后插入新节点 children 即可。
+         */
         if (isDef(oldVnode.text)) nodeOps.setTextContent(elm, '')
         addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue)
       } else if (isDef(oldCh)) {
+        /**
+         * --=--
+         * 只有老节点 children，新节点没有，只要把老节点 children 删掉
+         */
         removeVnodes(elm, oldCh, 0, oldCh.length - 1)
       } else if (isDef(oldVnode.text)) {
+        /**
+         * --=--
+         * 新旧节点都没有 children，但是老节点是个文本节点，新节点有没有文本内容，
+         * 老节点内容置空即可。
+         */
         nodeOps.setTextContent(elm, '')
       }
     } else if (oldVnode.text !== vnode.text) {
+      /**
+       * --=--
+       * 如果 vnode.text 有定义，说明这就是最内层的一个 text 节点，
+       * 那么只需要做文本的替换。
+       */
       nodeOps.setTextContent(elm, vnode.text)
     }
     if (isDef(data)) {
       if (isDef(i = data.hook) && isDef(i = i.postpatch)) i(oldVnode, vnode)
+      /**
+       * --=--
+       * 这个 postpatch 钩子函数是 v-model 这个指令引入的，
+       * 如果一个组件没有用 v-model 指令那么不会有这个钩子
+       */
     }
   }
 
@@ -754,6 +797,10 @@ export function createPatchFunction (backend) {
       const isRealElement = isDef(oldVnode.nodeType)
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
         // patch existing root node
+        /**
+         * --=--
+         * update 新旧节点相同时的逻辑
+         */
         patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly)
       } else {
         if (isRealElement) {
