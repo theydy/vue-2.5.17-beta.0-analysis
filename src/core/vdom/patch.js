@@ -474,24 +474,58 @@ export function createPatchFunction (backend) {
       } else if (isUndef(oldEndVnode)) {
         oldEndVnode = oldCh[--oldEndIdx]
       } else if (sameVnode(oldStartVnode, newStartVnode)) {
+        /**
+         * --=--
+         * oldStart 和 newStart 做比较，如果相同，说明真实 DOM 中的第一个节点位置没变，
+         * oldStartIdx 和 newStartIdx 都 ++ 
+         */
         patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue)
         oldStartVnode = oldCh[++oldStartIdx]
         newStartVnode = newCh[++newStartIdx]
       } else if (sameVnode(oldEndVnode, newEndVnode)) {
+        /**
+         * --=--
+         * oldEnd 和 newEnd 做比较，如果相同，说明真实 DOM 中的最后一个节点位置没变，
+         * oldEndIdx 和 newEndIdx 都 --
+         */
         patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue)
         oldEndVnode = oldCh[--oldEndIdx]
         newEndVnode = newCh[--newEndIdx]
       } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+        /**
+         * --=--
+         * oldStart 和 newEnd 做比较，如果相同，说明真实 DOM 中的第一个节点需要被移动到最后，
+         * 操作真实 DOM ，将原来的第一个子节点移动到最后。
+         * oldStartIdx ++
+         * newEndIdx --
+         */
         patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue)
         canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm))
         oldStartVnode = oldCh[++oldStartIdx]
         newEndVnode = newCh[--newEndIdx]
       } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+        /**
+         * --=--
+         * oldEnd 和 newStart 做比较，如果相同，说明真实 DOM 中的最后一个节点需要被移动到开头，
+         * 操作真实 DOM ，将原来的最后一个子节点移动到开头。
+         * oldEndIdx --
+         * newStartIdx ++
+         */
         patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue)
         canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
         oldEndVnode = oldCh[--oldEndIdx]
         newStartVnode = newCh[++newStartIdx]
       } else {
+        /**
+         * --=--
+         * 如果以上四中比较
+         * ( oldStart - newStart, oldEnd - newEnd, oldStart - newEnd, oldEnd - newStart )
+         * 都不命中，又可以分为两种情况
+         * 1. 新旧子节点都存在 key，根据 oldCh 的 key 生成一张 hash 表，用 newStart 的 key于 hash
+         *    表做匹配，如果匹配成功就判断是否为 sameNode ，如果是，就将真实 DOM 中这个节点移动到开头。
+         *    否则，将 newStart 生成的 DOM 节点插入到真实 DOM 开头的位置，oldStartIdx ++，newStartIdx ++
+         * 2. 如果没有 key，直接将 newStart 生成的 DOM 节点插入真实 DOM。
+         */
         if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
         idxInOld = isDef(newStartVnode.key)
           ? oldKeyToIdx[newStartVnode.key]
@@ -513,9 +547,21 @@ export function createPatchFunction (backend) {
       }
     }
     if (oldStartIdx > oldEndIdx) {
+      /**
+       * --=--
+       * 当 oldStartIdx > oldEndIdx 时
+       * 说明 newCh 的节点数比 oldCh 多，
+       * 那么把 newCh[newStartIdx] 到 newCh[newEndIdx] 的节点都插入到真实 DOM 中
+       */
       refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
       addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
     } else if (newStartIdx > newEndIdx) {
+      /**
+       * --=--
+       * 当 newStartIdx > newEndIdx 时
+       * 说明 oldCh 的节点数比 newCh 多，
+       * 那么把删除多余的 DOM 节点
+       */
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx)
     }
   }
@@ -546,6 +592,10 @@ export function createPatchFunction (backend) {
   }
 
   function patchVnode (oldVnode, vnode, insertedVnodeQueue, removeOnly) {
+    /**
+     * --=--
+     * diff 算法比较新旧节点的时候，比较只会在同层级进行, 不会跨层级比较。
+     */
     if (oldVnode === vnode) {
       return
     }
@@ -839,6 +889,14 @@ export function createPatchFunction (backend) {
           oldVnode = emptyNodeAt(oldVnode)
         }
 
+        /**
+         * --=--
+         * update 新旧节点不同时的逻辑，
+         * 大致分三步：
+         * 1. 根据 vnode 创建新的真实 DOM 节点
+         * 2. 更新父占位符 vnode 的节点信息
+         * 3. DOM tree 上删除 oldVnode 的 DOM 节点
+         */
         // replacing existing element
         const oldElm = oldVnode.elm
         const parentElm = nodeOps.parentNode(oldElm)
