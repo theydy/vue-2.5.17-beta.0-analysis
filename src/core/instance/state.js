@@ -50,18 +50,39 @@ export function initState (vm: Component) {
   const opts = vm.$options
   if (opts.props) initProps(vm, opts.props)
   if (opts.methods) initMethods(vm, opts.methods)
+  /**
+   * --=--
+   * methods 的处理很简单，只是判断了一下 method 类型，和 method 名是否被 props 和 vue 内部方法占用，
+   * 如果都没有的话，就直接 vm[key] = opts.methods[key] 即可，并且 bind this 为 vm。
+   */
   if (opts.data) {
     initData(vm)
   } else {
     observe(vm._data = {}, true /* asRootData */)
   }
+  /**
+   * --=--
+   * data 的处理，根实例和子组件一些区别。
+   * 判断有无 opts.data，有的话为子组件，执行 initData
+   */
   if (opts.computed) initComputed(vm, opts.computed)
   if (opts.watch && opts.watch !== nativeWatch) {
     initWatch(vm, opts.watch)
   }
+  /**
+   * --=--
+   * nativeWatch 是为了区分 Firefox 浏览器上 Object.prototype.watch 的原生方法。
+   */
 }
 
 function initProps (vm: Component, propsOptions: Object) {
+  /**
+   * --=--
+   * initProps 主要做了三件事
+   * 1. props 校验和求值 (validateProp)
+   * 2. props 响应式 (defineReactive)
+   * 3. props 代理 (proxy)
+   */
   const propsData = vm.$options.propsData || {}
   const props = vm._props = {}
   // cache prop keys so that future props updates can iterate using Array
@@ -110,10 +131,19 @@ function initProps (vm: Component, propsOptions: Object) {
 }
 
 function initData (vm: Component) {
+  /**
+   * --=--
+   * initData 主要做了四件事情：类型判断取值、命名冲突判断、proxy 代理、observe(data) 响应式。
+   */
   let data = vm.$options.data
   data = vm._data = typeof data === 'function'
     ? getData(data, vm)
     : data || {}
+  /**
+   * --=--
+   * 因为 data 可以写成 function () { return { a: 1, b: 2} } 或者直接是 { a: 1, b: 2}
+   * 所以取值前，需要判断类型，对于函数的情况，会调用 getData 方法取值。
+   */
   if (!isPlainObject(data)) {
     data = {}
     process.env.NODE_ENV !== 'production' && warn(
@@ -164,6 +194,19 @@ function initData (vm: Component) {
 }
 
 export function getData (data: Function, vm: Component): any {
+  /**
+   * --=--
+   * 执行 data 函数获取最终的结果前后，有个 pushTarget popTarget 操作，并且没有传 watcher
+   * 这里是针对 https://github.com/vuejs/vue/issues/7573 的一个修改
+   *
+   * 如果子组件 data 是一个函数并且函数中使用了 props，此时 props 已经是一个响应式数据，
+   * 此时会触发 props 的 getter，造成 props 收集依赖，
+   * 由于数据初始化的时机是 beforeCreated -> created 之间，此时还没有进入子组件的渲染阶段，
+   * Dep.target 还是父组件的渲染 Watcher，导致 props 收集到了父组件的渲染 Watcher，
+   * 最终表现就是父组件的字段更新时，触发了一次 update，更新子组件的 props 时第二次触发 update。
+   * 
+   * 更新一次后，这个 bug 就不会出现了，因为更新后再次收集依赖时子组件的渲染 Watcher 已经存在。
+   */
   // #7573 disable dep collection when invoking data getters
   pushTarget()
   try {
@@ -179,6 +222,14 @@ export function getData (data: Function, vm: Component): any {
 const computedWatcherOptions = { computed: true }
 
 function initComputed (vm: Component, computed: Object) {
+  /**
+   * --=--
+   * initComputed 的流程大致如下：
+   * 1. 在 vm 实例上创建 _computedWatchers，_computedWatchers 存放的是这个 vm 实例中所有的 computed watcher
+   * 2. computed 类型判断取值，computed 存在函数写法和配置写法两种。
+   * 3. 在 _computedWatchers[key] 上创建对应的 computed watcher
+   * 4. defineComputed
+   */
   // $flow-disable-line
   const watchers = vm._computedWatchers = Object.create(null)
   // computed properties are just getters during SSR
@@ -231,7 +282,7 @@ function initComputed (vm: Component, computed: Object) {
       defineComputed(vm, key, userDef)
       /**
        * --=--
-       * 所以我现在不懂什么情况下会走进这个分支了 =-=
+       * 子组件的computed 是在 Vue.extend 中定义的，根组件会走进这个分支
        */
     } else if (process.env.NODE_ENV !== 'production') {
       if (key in vm.$data) {
@@ -274,6 +325,11 @@ export function defineComputed (
     }
   }
   Object.defineProperty(target, key, sharedPropertyDefinition)
+  /**
+   * --=--
+   * defineComputed 函数其实就是给 vm[computedKey] 设置对应的 getter、setter
+   * 其中 getter 是根据 createComputedGetter 函数得来的。
+   */
 }
 
 function createComputedGetter (key) {
@@ -430,7 +486,7 @@ export function stateMixin (Vue: Class<Component>) {
      * --=--
      * 用 $watch 不能监听不是响应式的属性。
      * 因为 $watch 原理还是使用 Watchr 类，当访问对应属性时，
-     * 属性的 dep 收集依赖，更新属性时，派发更新。
+     * 触发 getter 收集依赖，更新属性时，派发更新。
      */
     if (options.immediate) {
       cb.call(vm, watcher.value)

@@ -276,6 +276,16 @@ export default class Watcher {
    * This only gets called for computed property watchers.
    */
   evaluate () {
+    /**
+     * --=--
+     * evaluate 函数在每一次 computed getter 触发时都会被调用，但是 computed 的值如果依赖不变，那么值就不会变，
+     * 不需要 getter 一次就重新计算一次。
+     * dirty 就是用来限制 computed 重新计算的，
+     * dirty 只有在初始化时为 true，会立即取值一次，之后就会被置为 false，
+     * 而且正常来说 dirty 之后是不可能改变再次置为 true 的，除非 computed 没有依赖响应式的数据。
+     * evaluate 永远取得都是缓存的 value 值，
+     * computed 的重新计算在 Watcher.update 中
+     */
     if (this.dirty) {
       this.value = this.get()
       this.dirty = false
