@@ -523,7 +523,7 @@ export function createPatchFunction (backend) {
          * 都不命中，又可以分为两种情况
          * 1. 新旧子节点都存在 key，根据 oldCh 的 key 生成一张 hash 表，用 newStart 的 key于 hash
          *    表做匹配，如果匹配成功就判断是否为 sameNode ，如果是，就将真实 DOM 中这个节点移动到开头。
-         *    否则，将 newStart 生成的 DOM 节点插入到真实 DOM 开头的位置，oldStartIdx ++，newStartIdx ++
+         *    否则，将 newStart 生成的 DOM 节点插入到真实 DOM
          * 2. 如果没有 key，直接将 newStart 生成的 DOM 节点插入真实 DOM。
          */
         if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)

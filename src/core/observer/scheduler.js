@@ -36,6 +36,14 @@ function resetSchedulerState () {
  * Flush both queues and run the watchers.
  */
 function flushSchedulerQueue () {
+  /**
+   * --=--
+   * 1. 设置 flushing 状态
+   * 2. queue 排序
+   * 3. 遍历 queue 执行 watcher.run()
+   * 4. resetSchedulerState() 还原状态变量
+   * 5. 触发组件钩子函数
+   */
   flushing = true
   let watcher, id
 

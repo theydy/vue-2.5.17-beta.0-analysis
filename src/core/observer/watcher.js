@@ -49,6 +49,13 @@ export default class Watcher {
     options?: ?Object,
     isRenderWatcher?: boolean
   ) {
+    /**
+     * --=--
+     * new Watcher 主要做如下三件事：
+     * 1. 初始化配置
+     * 2. 获取 getter
+     * 3. 如果不是 computed watcher 立即执行 get
+     */
     this.vm = vm
     if (isRenderWatcher) {
       vm._watcher = this
@@ -109,6 +116,13 @@ export default class Watcher {
    * Evaluate the getter, and re-collect dependencies.
    */
   get () {
+    /**
+     * --=--
+     * 1. 当前 Watcher 入栈
+     * 2. getter()
+     * 3. 当前 Watcher 出栈
+     * 4. cleanupDeps 更新 deps
+     */
     pushTarget(this)
     let value
     const vm = this.vm
@@ -197,6 +211,12 @@ export default class Watcher {
    * Will be called when a dependency changes.
    */
   update () {
+    /**
+     * --=--
+     * computed watcher => this.getAndInvoke 重新计算并且触发 deps notify
+     * .sync === true => this.run() 几乎等同于 this.getAndInvoke 并且触发 user watcher 回调
+     * 其他 => queueWatcher(this) 将当前 Watcher 放入更新队列
+     */
     /* istanbul ignore else */
     if (this.computed) {
       // A computed property watcher has two modes: lazy and activated.
